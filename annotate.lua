@@ -16,7 +16,7 @@ local defaults = {
   bin = nil,
   -- false leaves feedback in the agent's prompt to edit and submit, instead of sending it.
   submit = true,
-  -- How many recent lines a terminal review reads.
+  -- How many recent lines a terminal or find review reads.
   lines = 200,
   -- A key for each action. Set one to false to leave it unbound, or keys = false for none.
   keys = {
@@ -24,6 +24,7 @@ local defaults = {
     newest = "cmd+alt+o",
     open = "cmd+shift+e",
     terminal = "cmd+alt+t",
+    find = "cmd+shift+f",
   },
 }
 
@@ -59,6 +60,14 @@ local actions = {
     description = "Annotate the focused pane's recent output, and send the feedback to its agent or the clipboard.",
     keywords = "plannotator review output log scrollback",
     review = { "terminal" },
+  },
+  {
+    name = "annotate_find",
+    key = "find",
+    title = "Annotate: Markdown File in This Pane's Output",
+    description = "Open the newest Markdown file the focused pane's output names, and send the feedback to its agent.",
+    keywords = "plannotator review markdown report path file output",
+    review = { "find" },
   },
 }
 
@@ -118,7 +127,7 @@ local function launcher(config, action)
     for _, word in ipairs({ "--block", ctx.block_id, "--session", ctx.session_id }) do
       argv[#argv + 1] = word
     end
-    if action.key == "terminal" then
+    if action.key == "terminal" or action.key == "find" then
       argv[#argv + 1] = "--lines"
       argv[#argv + 1] = tostring(config.lines)
     end

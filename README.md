@@ -109,7 +109,7 @@ require("annotate").setup{
   bin = nil,
   -- false leaves the feedback in the agent's prompt instead of sending it.
   submit = true,
-  -- How many recent lines a terminal review reads.
+  -- How many recent lines a terminal or find review reads.
   lines = 200,
   -- A key for each action. false leaves one unbound; keys = false binds none.
   keys = {
@@ -117,11 +117,14 @@ require("annotate").setup{
     newest = "cmd+alt+o",
     open = "cmd+shift+e",
     terminal = "cmd+alt+t",
+    find = "cmd+shift+f",
   },
 }
 ```
 
-The actions are `annotate_last`, `annotate_newest`, `annotate_open`, and `annotate_terminal`.
+The actions are `annotate_last`, `annotate_newest`, `annotate_open`, `annotate_terminal`, and
+`annotate_find`. `annotate_find` opens the newest Markdown file that the pane's output names,
+such as a report path an agent prints.
 Each accepts `paste`. Bind them with `rex.bind` as you would any action.
 
 plannotator-tui reads its own settings from `~/.config/plannotator-tui/config.toml`. Run
@@ -169,6 +172,7 @@ The commands work without the Lua module too:
 plannotator-tui rex last [--newest] [--paste] [--block ID]
 plannotator-tui rex open [PATH] [--paste] [--block ID]
 plannotator-tui rex terminal [--lines N] [--paste] [--print] [--block ID]
+plannotator-tui rex find [--lines N] [--paste] [--block ID]
 ```
 
 ## Troubleshooting
