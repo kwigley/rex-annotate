@@ -16,3 +16,5 @@ jobs:
         run: shellcheck install.sh scripts/smoke.sh
       - name: Lua syntax (Rex runs Lua 5.1)
         run: luac5.1 -p annotate.lua
+      - name: Argument building
+        run: lua5.1 tests/argv_test.lua

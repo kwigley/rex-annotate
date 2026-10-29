@@ -82,8 +82,13 @@ end
 
 --- The first plannotator-tui in the places installers put it. Rex runs actions with a bare
 --- PATH, so `PATH` alone would miss them. Cargo comes first: it holds the build with Rex
---- support until a release does.
+--- support until a release does. The first hit is kept, so a key press reads no files.
+local found
+
 local function find_bin()
+  if found ~= nil then
+    return found
+  end
   local home = os.getenv("HOME") or ""
   local candidates = {
     home .. "/.cargo/bin/plannotator-tui",
@@ -94,7 +99,8 @@ local function find_bin()
   }
   for _, path in ipairs(candidates) do
     if readable(path) then
-      return path
+      found = path
+      return found
     end
   end
   return nil
@@ -111,6 +117,30 @@ local function merge(base, overrides)
   return out
 end
 
+--- The command line that opens `action` beside `ctx.block_id`. Pure, so a test can check it
+--- without a Rex server.
+local function build_argv(bin, config, action, ctx, args)
+  local argv = { bin, "rex" }
+  for _, word in ipairs(action.review) do
+    argv[#argv + 1] = word
+  end
+  for _, word in ipairs({ "--block", ctx.block_id, "--session", ctx.session_id }) do
+    argv[#argv + 1] = word
+  end
+  if action.key == "terminal" or action.key == "find" then
+    argv[#argv + 1] = "--lines"
+    argv[#argv + 1] = tostring(config.lines)
+  end
+  local paste = args.paste
+  if paste == nil then
+    paste = not config.submit
+  end
+  if paste then
+    argv[#argv + 1] = "--paste"
+  end
+  return argv
+end
+
 local function launcher(config, action)
   return function(ctx, args)
     local bin = config.bin or find_bin()
@@ -120,26 +150,8 @@ local function launcher(config, action)
     if ctx.block_id == nil then
       error("no focused pane to review", 0)
     end
-    local argv = { bin, "rex" }
-    for _, word in ipairs(action.review) do
-      argv[#argv + 1] = word
-    end
-    for _, word in ipairs({ "--block", ctx.block_id, "--session", ctx.session_id }) do
-      argv[#argv + 1] = word
-    end
-    if action.key == "terminal" or action.key == "find" then
-      argv[#argv + 1] = "--lines"
-      argv[#argv + 1] = tostring(config.lines)
-    end
-    local paste = args.paste
-    if paste == nil then
-      paste = not config.submit
-    end
-    if paste then
-      argv[#argv + 1] = "--paste"
-    end
     -- The launcher exits as soon as the split is open, so waiting surfaces its errors.
-    local result, err = rex.exec(argv, { timeout = 15 })
+    local result, err = rex.exec(build_argv(bin, config, action, ctx, args), { timeout = 15 })
     if result == nil then
       error("plannotator-tui: " .. tostring(err), 0)
     end
@@ -170,7 +182,13 @@ function M.setup(opts)
       rex.bind(keys[action.key], action.name)
     end
   end
-  return M
+  M.actions = actions
+M.build_argv = build_argv
+
+return M
 end
+
+M.actions = actions
+M.build_argv = build_argv
 
 return M
